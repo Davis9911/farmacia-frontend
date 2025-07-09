@@ -9,15 +9,18 @@ export default function Home() {
   const [farmaciaId, setFarmaciaId] = useState("riera"); // por defecto "riera"
 
   function parseBotReply(text) {
-    const regex = /(https:\/\/wa\.me\/\d+)/g;
-    const seenLinks = new Set();
-    const parts = text.split(regex);
-    return parts.map((part, i) => {
-      if (part.startsWith("https://wa.me/")) {
-        if (seenLinks.has(part)) {
-          return null;
-        }
-        seenLinks.add(part);
+  // Detecta cualquier enlace (no solo WhatsApp)
+  const regex = /(https?:\/\/[^\s]+)/g;
+  const seenLinks = new Set();
+  const parts = text.split(regex);
+  return parts.map((part, i) => {
+    if (part.startsWith("https://")) {
+      if (seenLinks.has(part)) {
+        return null; // Solo mostramos el primer enlace de cada uno
+      }
+      seenLinks.add(part);
+      // Personaliza el botón según el destino
+      if (part.includes("wa.me/")) {
         return (
           <a
             key={i}
@@ -29,10 +32,36 @@ export default function Home() {
             Consultar por WhatsApp
           </a>
         );
+      } else if (part.includes("farmaciariera.com") || part.includes("producto")) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-blue-600 text-white px-3 py-1 rounded-xl ml-1"
+          >
+            Ver producto
+          </a>
+        );
+      } else {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gray-500 text-white px-3 py-1 rounded-xl ml-1"
+          >
+            Abrir enlace
+          </a>
+        );
       }
-      return part;
-    });
-  }
+    }
+    return part;
+  });
+}
+
 
   const sendMessage = async (e) => {
     e.preventDefault();
