@@ -11,10 +11,15 @@ export default function Home() {
   // Detecta y convierte enlaces WhatsApp en botón
   function parseBotReply(text) {
   const regex = /(https:\/\/wa\.me\/\d+)/g;
+  const seenLinks = new Set();
   const parts = text.split(regex);
-  return parts.map((part, i) =>
-    part.startsWith("https://wa.me/")
-      ? (
+  return parts.map((part, i) => {
+    if (part.startsWith("https://wa.me/")) {
+      if (seenLinks.has(part)) {
+        return null; // Ya se mostró este enlace, no lo repetimos
+      }
+      seenLinks.add(part);
+      return (
         <a
           key={i}
           href={part}
@@ -24,10 +29,12 @@ export default function Home() {
         >
           Consultar por WhatsApp
         </a>
-      )
-      : part
-  );
+      );
+    }
+    return part;
+  });
 }
+
 
   const sendMessage = async (e) => {
     e.preventDefault();
