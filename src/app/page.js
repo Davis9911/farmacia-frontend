@@ -10,24 +10,24 @@ export default function Home() {
 
   // Detecta y convierte enlaces WhatsApp en botón
   function parseBotReply(text) {
-    const regex = /(https:\/\/wa\.me\/\d+)/g;
-    const parts = text.split(regex);
-    return parts.map((part, i) =>
-      part.startsWith("https://wa.me/")
-        ? (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-500 text-white px-3 py-1 rounded-xl ml-1"
-          >
-            Consultar por WhatsApp
-          </a>
-        )
-        : part
-    );
-  }
+  const regex = /(https:\/\/wa\.me\/\d+)/g;
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    part.startsWith("https://wa.me/")
+      ? (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-green-500 text-white px-3 py-1 rounded-xl ml-1"
+        >
+          Consultar por WhatsApp
+        </a>
+      )
+      : part
+  );
+}
 
   const sendMessage = async (e) => {
     e.preventDefault();
