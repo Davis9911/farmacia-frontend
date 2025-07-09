@@ -6,35 +6,35 @@ export default function Home() {
     { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" }
   ]);
   const [input, setInput] = useState("");
-  const [farmaciaTipo, setFarmaciaTipo] = useState("carrito"); // Cambia aquí el tipo
+  // Poner aquí el tipo de farmacia según el deploy (carrito o simple)
+  const farmaciaTipo = "carrito"; // Cambia a "simple" si la farmacia es sin carrito
 
-  // Detecta y convierte enlaces WhatsApp en botón
+  // Detecta y convierte enlaces WhatsApp en botón (sin repetir)
   function parseBotReply(text) {
-  const regex = /(https:\/\/wa\.me\/\d+)/g;
-  const seenLinks = new Set();
-  const parts = text.split(regex);
-  return parts.map((part, i) => {
-    if (part.startsWith("https://wa.me/")) {
-      if (seenLinks.has(part)) {
-        return null; // Ya se mostró este enlace, no lo repetimos
+    const regex = /(https:\/\/wa\.me\/\d+)/g;
+    const seenLinks = new Set();
+    const parts = text.split(regex);
+    return parts.map((part, i) => {
+      if (part.startsWith("https://wa.me/")) {
+        if (seenLinks.has(part)) {
+          return null; // Ya se mostró este enlace, no lo repetimos
+        }
+        seenLinks.add(part);
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-green-500 text-white px-3 py-1 rounded-xl ml-1"
+          >
+            Consultar por WhatsApp
+          </a>
+        );
       }
-      seenLinks.add(part);
-      return (
-        <a
-          key={i}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-green-500 text-white px-3 py-1 rounded-xl ml-1"
-        >
-          Consultar por WhatsApp
-        </a>
-      );
-    }
-    return part;
-  });
-}
-
+      return part;
+    });
+  }
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -69,14 +69,6 @@ export default function Home() {
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col p-4">
         <div className="text-lg font-bold text-blue-700 mb-3">💊 Farmacia Chat Demo</div>
-        {/* Selector de tipo de farmacia */}
-        <div className="mb-2">
-          <label className="mr-2">Tipo de farmacia: </label>
-          <select value={farmaciaTipo} onChange={e => setFarmaciaTipo(e.target.value)}>
-            <option value="carrito">Farmacia con carrito</option>
-            <option value="simple">Farmacia sin carrito (WhatsApp)</option>
-          </select>
-        </div>
         <div className="flex-1 overflow-y-auto mb-4" style={{ minHeight: "320px", maxHeight: "320px" }}>
           {messages.map((msg, i) => (
             <div
