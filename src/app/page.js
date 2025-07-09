@@ -6,10 +6,8 @@ export default function Home() {
     { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" }
   ]);
   const [input, setInput] = useState("");
-  // Poner aquí el tipo de farmacia según el deploy (carrito o simple)
-  const farmaciaTipo = "carrito"; // Cambia a "simple" si la farmacia es sin carrito
+  const [farmaciaId, setFarmaciaId] = useState("riera"); // por defecto "riera"
 
-  // Detecta y convierte enlaces WhatsApp en botón (sin repetir)
   function parseBotReply(text) {
     const regex = /(https:\/\/wa\.me\/\d+)/g;
     const seenLinks = new Set();
@@ -17,7 +15,7 @@ export default function Home() {
     return parts.map((part, i) => {
       if (part.startsWith("https://wa.me/")) {
         if (seenLinks.has(part)) {
-          return null; // Ya se mostró este enlace, no lo repetimos
+          return null;
         }
         seenLinks.add(part);
         return (
@@ -49,7 +47,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          farmacia_tipo: farmaciaTipo
+          farmacia_id: farmaciaId // este es el identificador que va al backend
         }),
       });
       const data = await res.json();
@@ -68,7 +66,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col p-4">
-        <div className="text-lg font-bold text-blue-700 mb-3">💊 Farmacia Chat Demo</div>
+        <div className="text-lg font-bold text-blue-700 mb-3">💊 Farmacia Chat Demo Multifarmacia</div>
+        {/* Selector de farmacia para pruebas */}
+        <div className="mb-2">
+          <label className="mr-2">Farmacia: </label>
+          <select value={farmaciaId} onChange={e => setFarmaciaId(e.target.value)}>
+            <option value="riera">Riera (Carrito)</option>
+            <option value="uriarte">Uriarte (Simple)</option>
+          </select>
+        </div>
         <div className="flex-1 overflow-y-auto mb-4" style={{ minHeight: "320px", maxHeight: "320px" }}>
           {messages.map((msg, i) => (
             <div
