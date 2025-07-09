@@ -37,7 +37,7 @@ export default function Home() {
     setInput("");
 
     try {
-      const res = await fetch("https://farmacia-backend-psi.vercel.app/", {
+      const res = await fetch("https://farmacia-backend-psi.vercel.app/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
