@@ -1,12 +1,32 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Función para leer parámetros de la URL
+function getQueryParams() {
+  if (typeof window === "undefined") return {
+    color: "#2B7DFA",
+    logo: "",
+    farmaciaId: "riera"
+  };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    color: params.get("color") || "#2B7DFA",
+    logo: params.get("logo") || "",
+    farmaciaId: params.get("farmacia_id") || "riera"
+  };
+}
 
 export default function Home() {
+  // Lee los parámetros solo una vez al principio
+  const { color, logo, farmaciaId } = getQueryParams();
+
   const [messages, setMessages] = useState([
     { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" }
   ]);
   const [input, setInput] = useState("");
-  const [farmaciaId, setFarmaciaId] = useState("riera"); // por defecto "riera"
+
+  // Si algún día quieres que el usuario pueda cambiar de farmacia sin recargar,  
+  // puedes volver a poner el selector. Ahora solo usa la que llega por URL.
 
   function parseBotReply(text) {
     // Detecta cualquier enlace (no solo WhatsApp)
@@ -74,11 +94,11 @@ export default function Home() {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "x-api-key": "CaminogloriaDPM2709_" // <-- AQUÍ TU TOKEN
+          "x-api-key": "CaminogloriaDPM2709_" // <-- TU TOKEN
         },
         body: JSON.stringify({
           message: userMessage,
-          farmacia_id: farmaciaId // este es el identificador que va al backend
+          farmacia_id: farmaciaId // Llega desde la URL
         }),
       });
       const data = await res.json();
@@ -97,15 +117,21 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col p-4">
-        <div className="text-lg font-bold text-blue-700 mb-3">💊 Farmacia Chat Demo Multifarmacia</div>
-        {/* Selector de farmacia para pruebas */}
-        <div className="mb-2">
-          <label className="mr-2">Farmacia: </label>
-          <select value={farmaciaId} onChange={e => setFarmaciaId(e.target.value)}>
-            <option value="riera">Riera (Carrito)</option>
-            <option value="uriarte">Uriarte (Simple)</option>
-          </select>
+        {/* Barra superior personalizada */}
+        <div
+          className="text-lg font-bold mb-3 flex items-center"
+          style={{ color: color }}
+        >
+          {logo && (
+            <img
+              src={logo}
+              alt="logo farmacia"
+              style={{ width: 36, height: 36, borderRadius: "50%", marginRight: 8 }}
+            />
+          )}
+          💊 Chat Farmacia
         </div>
+
         <div className="flex-1 overflow-y-auto mb-4" style={{ minHeight: "320px", maxHeight: "320px" }}>
           {messages.map((msg, i) => (
             <div
@@ -115,9 +141,10 @@ export default function Home() {
               <div
                 className={`px-4 py-2 rounded-2xl text-sm shadow
                   ${msg.sender === "user"
-                    ? "bg-blue-600 text-white rounded-br-none"
+                    ? "text-white rounded-br-none"
                     : "bg-blue-100 text-blue-900 rounded-bl-none"
                   }`}
+                style={msg.sender === "user" ? { backgroundColor: color } : {}}
               >
                 {msg.sender === "bot" ? parseBotReply(msg.text) : msg.text}
               </div>
@@ -126,14 +153,16 @@ export default function Home() {
         </div>
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
-            className="flex-1 border rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 border rounded-2xl px-4 py-2 focus:outline-none focus:ring-2"
+            style={{ borderColor: color }}
             placeholder="Escribe tu mensaje..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-2xl font-bold hover:bg-blue-700 transition"
+            className="text-white px-4 py-2 rounded-2xl font-bold hover:opacity-90 transition"
+            style={{ backgroundColor: color }}
           >
             Enviar
           </button>
