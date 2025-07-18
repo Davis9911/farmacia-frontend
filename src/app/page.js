@@ -16,6 +16,12 @@ function getQueryParams() {
   };
 }
 
+const FAQ_QUESTIONS = [
+  "¿Cuál es el horario?",
+  "¿Dónde está la Farmacia?",
+  "¿Cómo puedo hacer un encargo?"
+];
+
 export default function Home() {
   // Lee los parámetros solo una vez al principio
   const { color, logo, farmaciaId } = getQueryParams();
@@ -24,25 +30,9 @@ export default function Home() {
     { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" }
   ]);
   const [input, setInput] = useState("");
+  const [showFAQ, setShowFAQ] = useState(true); // NUEVO
 
-  // REFERENCIA al input para preguntas FAQ
   const inputRef = useRef(null);
-
-  // ====== Escuchar mensajes FAQ desde fuera (postMessage) ======
-  useEffect(() => {
-    function handleFAQMessage(event) {
-      if (event.data && event.data.faq) {
-        setInput(event.data.faq); // Rellena el input visualmente
-        // Opcional: enviar automáticamente el mensaje FAQ
-        setTimeout(() => {
-          // Simula "enter" para enviar
-          document.getElementById("faq-autosend")?.click();
-        }, 100);
-      }
-    }
-    window.addEventListener("message", handleFAQMessage);
-    return () => window.removeEventListener("message", handleFAQMessage);
-  }, []);
 
   function parseBotReply(text) {
     // Detecta cualquier enlace (no solo WhatsApp)
@@ -98,23 +88,24 @@ export default function Home() {
     });
   }
 
-  const sendMessage = async (e) => {
+  const sendMessage = async (e, valueOverride) => {
     if (e) e.preventDefault();
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { sender: "user", text: input }]);
-    const userMessage = input;
+    const messageToSend = typeof valueOverride === "string" ? valueOverride : input;
+    if (!messageToSend.trim()) return;
+    setMessages(prev => [...prev, { sender: "user", text: messageToSend }]);
     setInput("");
+    setShowFAQ(false); // OCULTA FAQ después de enviar cualquier mensaje
 
     try {
       const res = await fetch("https://farmacia-backend-psi.vercel.app/api/chat", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "x-api-key": "CaminogloriaDPM2709_" // <-- TU TOKEN
+          "x-api-key": "CaminogloriaDPM2709_"
         },
         body: JSON.stringify({
-          message: userMessage,
-          farmacia_id: farmaciaId // Llega desde la URL
+          message: messageToSend,
+          farmacia_id: farmaciaId
         }),
       });
       const data = await res.json();
@@ -129,6 +120,12 @@ export default function Home() {
       ]);
     }
   };
+
+  // Cuando el usuario empieza a escribir, ocultamos FAQ
+  function handleInputChange(e) {
+    setInput(e.target.value);
+    if (e.target.value.length > 0 && showFAQ) setShowFAQ(false);
+  }
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
@@ -167,6 +164,21 @@ export default function Home() {
             </div>
           ))}
         </div>
+        {/* FAQ Preguntas frecuentes DENTRO del chat */}
+        {showFAQ && (
+          <div className="flex flex-wrap gap-2 mb-2 justify-center">
+            {FAQ_QUESTIONS.map((faq, idx) => (
+              <button
+                key={idx}
+                onClick={() => sendMessage(null, faq)}
+                className="bg-[#B854A6] text-white rounded-xl px-3 py-2 text-sm font-semibold shadow hover:opacity-90"
+                style={{ border: "none" }}
+              >
+                {faq}
+              </button>
+            ))}
+          </div>
+        )}
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
             className="flex-1 border rounded-2xl px-4 py-2 focus:outline-none focus:ring-2"
@@ -174,16 +186,9 @@ export default function Home() {
             placeholder="Escribe tu mensaje..."
             value={input}
             ref={inputRef}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             id="input-mensaje"
-          />
-          {/* Botón oculto solo para autoenviar FAQ */}
-          <button
-            id="faq-autosend"
-            type="submit"
-            style={{ display: "none" }}
-            tabIndex={-1}
-            aria-hidden="true"
+            autoComplete="off"
           />
           <button
             type="submit"
