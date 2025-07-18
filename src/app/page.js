@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Función para leer parámetros de la URL
 function getQueryParams() {
@@ -25,8 +25,24 @@ export default function Home() {
   ]);
   const [input, setInput] = useState("");
 
-  // Si algún día quieres que el usuario pueda cambiar de farmacia sin recargar,  
-  // puedes volver a poner el selector. Ahora solo usa la que llega por URL.
+  // REFERENCIA al input para preguntas FAQ
+  const inputRef = useRef(null);
+
+  // ====== Escuchar mensajes FAQ desde fuera (postMessage) ======
+  useEffect(() => {
+    function handleFAQMessage(event) {
+      if (event.data && event.data.faq) {
+        setInput(event.data.faq); // Rellena el input visualmente
+        // Opcional: enviar automáticamente el mensaje FAQ
+        setTimeout(() => {
+          // Simula "enter" para enviar
+          document.getElementById("faq-autosend")?.click();
+        }, 100);
+      }
+    }
+    window.addEventListener("message", handleFAQMessage);
+    return () => window.removeEventListener("message", handleFAQMessage);
+  }, []);
 
   function parseBotReply(text) {
     // Detecta cualquier enlace (no solo WhatsApp)
@@ -83,7 +99,7 @@ export default function Home() {
   }
 
   const sendMessage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!input.trim()) return;
     setMessages(prev => [...prev, { sender: "user", text: input }]);
     const userMessage = input;
@@ -157,7 +173,17 @@ export default function Home() {
             style={{ borderColor: color }}
             placeholder="Escribe tu mensaje..."
             value={input}
+            ref={inputRef}
             onChange={(e) => setInput(e.target.value)}
+            id="input-mensaje"
+          />
+          {/* Botón oculto solo para autoenviar FAQ */}
+          <button
+            id="faq-autosend"
+            type="submit"
+            style={{ display: "none" }}
+            tabIndex={-1}
+            aria-hidden="true"
           />
           <button
             type="submit"
