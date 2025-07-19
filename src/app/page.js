@@ -30,8 +30,8 @@ export default function Home() {
     { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" }
   ]);
   const [input, setInput] = useState("");
-  const [showFAQ, setShowFAQ] = useState(true); // NUEVO
-
+  const [showFAQ, setShowFAQ] = useState(true);
+  const [isTyping, setIsTyping] = useState(false); // <-- AQUÍ va el hook correcto
   const inputRef = useRef(null);
 
   function parseBotReply(text) {
@@ -94,7 +94,8 @@ export default function Home() {
     if (!messageToSend.trim()) return;
     setMessages(prev => [...prev, { sender: "user", text: messageToSend }]);
     setInput("");
-    setShowFAQ(false); // OCULTA FAQ después de enviar cualquier mensaje
+    setShowFAQ(false);
+    setIsTyping(true); // 👈 Empieza "escribiendo"
 
     try {
       const res = await fetch("https://farmacia-backend-psi.vercel.app/api/chat", {
@@ -119,6 +120,7 @@ export default function Home() {
         { sender: "bot", text: "Error conectando con la farmacia. Intenta más tarde." }
       ]);
     }
+    setIsTyping(false); // 👈 Termina "escribiendo"
   };
 
   // Cuando el usuario empieza a escribir, ocultamos FAQ
@@ -129,7 +131,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-full sm:max-w-md flex flex-col p-2 sm:p-4">
         {/* Barra superior personalizada */}
         <div
           className="text-lg font-bold mb-3 flex items-center"
@@ -145,6 +147,7 @@ export default function Home() {
           💊 Chat Farmacia
         </div>
 
+        {/* BURBUJAS DE MENSAJES - MÁS REDONDAS */}
         <div className="flex-1 overflow-y-auto mb-4" style={{ minHeight: "320px", maxHeight: "320px" }}>
           {messages.map((msg, i) => (
             <div
@@ -152,18 +155,28 @@ export default function Home() {
               className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} mb-2`}
             >
               <div
-                className={`px-4 py-2 rounded-2xl text-sm shadow
+                className={`px-4 py-2 text-sm shadow
                   ${msg.sender === "user"
-                    ? "text-white rounded-br-none"
-                    : "bg-blue-100 text-blue-900 rounded-bl-none"
+                    ? "text-white rounded-br-3xl rounded-tl-3xl rounded-tr-3xl rounded-bl-[36px]"
+                    : "bg-blue-100 text-blue-900 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl rounded-br-[36px]"
                   }`}
-                style={msg.sender === "user" ? { backgroundColor: color } : {}}
+                style={msg.sender === "user" ? { backgroundColor: color, maxWidth: "80%" } : { maxWidth: "80%" }}
               >
                 {msg.sender === "bot" ? parseBotReply(msg.text) : msg.text}
               </div>
             </div>
           ))}
         </div>
+
+        {/* MENSAJE "ESTÁ ESCRIBIENDO..." */}
+        {isTyping && (
+          <div className="flex items-center mb-2">
+            <div className="animate-pulse text-gray-500 italic text-sm">
+              La farmacia está escribiendo...
+            </div>
+          </div>
+        )}
+
         {/* FAQ Preguntas frecuentes DENTRO del chat */}
         {showFAQ && (
           <div className="flex flex-wrap gap-2 mb-2 justify-center">
