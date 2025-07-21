@@ -88,14 +88,22 @@ export default function Home() {
     });
   }
 
-  const sendMessage = async (e, valueOverride) => {
+    const sendMessage = async (e, valueOverride) => {
     if (e) e.preventDefault();
     const messageToSend = typeof valueOverride === "string" ? valueOverride : input;
     if (!messageToSend.trim()) return;
     setMessages(prev => [...prev, { sender: "user", text: messageToSend }]);
     setInput("");
     setShowFAQ(false);
-    setIsTyping(true); // 👈 Empieza "escribiendo"
+
+    // Nuevo: preparamos historial para enviar al backend
+    const history = [
+      ...messages.map(m => ({
+        role: m.sender === "user" ? "user" : "assistant",
+        content: m.text
+      })),
+      { role: "user", content: messageToSend }
+    ];
 
     try {
       const res = await fetch("https://farmacia-backend-psi.vercel.app/api/chat", {
@@ -105,7 +113,7 @@ export default function Home() {
           "x-api-key": "CaminogloriaDPM2709_"
         },
         body: JSON.stringify({
-          message: messageToSend,
+          messages: history,  // <-- Cambiado: mandamos historial
           farmacia_id: farmaciaId
         }),
       });
