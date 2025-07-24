@@ -95,6 +95,8 @@ export default function Home() {
     setMessages(prev => [...prev, { sender: "user", text: messageToSend }]);
     setInput("");
     setShowFAQ(false);
+    
+    setIsTyping(true);
 
     // Nuevo: preparamos historial para enviar al backend
     const history = [
