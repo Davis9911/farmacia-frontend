@@ -95,7 +95,7 @@ export default function Home() {
     setMessages(prev => [...prev, { sender: "user", text: messageToSend }]);
     setInput("");
     setShowFAQ(false);
-    
+
     setIsTyping(true);
 
     // Nuevo: preparamos historial para enviar al backend
@@ -188,14 +188,15 @@ export default function Home() {
         )}
 
         {/* FAQ Preguntas frecuentes DENTRO del chat */}
-        {showFAQ && (
+    
+          {showFAQ && (
           <div className="flex flex-wrap gap-2 mb-2 justify-center">
             {FAQ_QUESTIONS.map((faq, idx) => (
               <button
                 key={idx}
                 onClick={() => sendMessage(null, faq)}
-                className="bg-[#B854A6] text-white rounded-xl px-3 py-2 text-sm font-semibold shadow hover:opacity-90"
-                style={{ border: "none" }}
+                className="text-white rounded-xl px-3 py-2 text-sm font-semibold shadow hover:opacity-90"
+                style={{ border: "none", backgroundColor: color }}
               >
                 {faq}
               </button>
