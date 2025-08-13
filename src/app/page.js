@@ -1,51 +1,47 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-// Función para leer parámetros de la URL
+// Lee parámetros de la URL (color, logo, farmacia_id)
 function getQueryParams() {
-  if (typeof window === "undefined") return {
-    color: "#2B7DFA",
-    logo: "",
-    farmaciaId: "riera"
-  };
+  if (typeof window === "undefined") {
+    return { color: "#2B7DFA", logo: "", farmaciaId: "riera" };
+  }
   const params = new URLSearchParams(window.location.search);
   return {
     color: params.get("color") || "#2B7DFA",
     logo: params.get("logo") || "",
-    farmaciaId: params.get("farmacia_id") || "riera"
+    farmaciaId: params.get("farmacia_id") || "riera",
   };
 }
 
 const FAQ_QUESTIONS = [
   "¿Cuál es el horario?",
   "¿Dónde está la Farmacia?",
-  "¿Cómo puedo hacer un encargo?"
+  "¿Cómo puedo hacer un encargo?",
 ];
 
 export default function Home() {
-  // Lee los parámetros solo una vez al principio
   const { color, logo, farmaciaId } = getQueryParams();
 
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" }
+    { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" },
   ]);
   const [input, setInput] = useState("");
   const [showFAQ, setShowFAQ] = useState(true);
-  const [isTyping, setIsTyping] = useState(false); // <-- AQUÍ va el hook correcto
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef(null);
 
+  // Convierte texto del bot en texto + botones de enlaces
   function parseBotReply(text) {
-    // Detecta cualquier enlace (no solo WhatsApp)
     const regex = /(https?:\/\/[^\s]+)/g;
-    const seenLinks = new Set();
+    const seen = new Set();
     const parts = text.split(regex);
+
     return parts.map((part, i) => {
-      if (part && part.startsWith && part.startsWith("https://")) {
-        if (seenLinks.has(part)) {
-          return null; // Solo mostramos el primer enlace de cada uno
-        }
-        seenLinks.add(part);
-        // Personaliza el botón según el destino
+      if (part && typeof part === "string" && part.startsWith("http")) {
+        if (seen.has(part)) return null;
+        seen.add(part);
+
         if (part.includes("wa.me/")) {
           return (
             <a
@@ -58,7 +54,7 @@ export default function Home() {
               Consultar por WhatsApp
             </a>
           );
-        } else if (part.includes("farmaciariera.com") || part.includes("producto")) {
+        } else if (part.includes("farmacia") || part.includes("producto")) {
           return (
             <a
               key={i}
@@ -77,7 +73,7 @@ export default function Home() {
               href={part}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-gray-500 text-white px-3 py-1 rounded-xl ml-1"
+              className="bg-gray-600 text-white px-3 py-1 rounded-xl ml-1"
             >
               Abrir enlace
             </a>
@@ -88,52 +84,54 @@ export default function Home() {
     });
   }
 
-    const sendMessage = async (e, valueOverride) => {
+  // Envía mensaje (desde formulario o FAQ)
+  const sendMessage = async (e, valueOverride) => {
     if (e) e.preventDefault();
-    const messageToSend = typeof valueOverride === "string" ? valueOverride : input;
+
+    const messageToSend =
+      typeof valueOverride === "string" ? valueOverride : input;
     if (!messageToSend.trim()) return;
-    setMessages(prev => [...prev, { sender: "user", text: messageToSend }]);
+
+    setMessages((prev) => [...prev, { sender: "user", text: messageToSend }]);
     setInput("");
     setShowFAQ(false);
 
-    setIsTyping(true);
-
-    // Nuevo: preparamos historial para enviar al backend
+    // Historial completo para el backend
     const history = [
-      ...messages.map(m => ({
+      ...messages.map((m) => ({
         role: m.sender === "user" ? "user" : "assistant",
-        content: m.text
+        content: m.text,
       })),
-      { role: "user", content: messageToSend }
+      { role: "user", content: messageToSend },
     ];
 
+    setIsTyping(true); // ⬅️ muestra “está escribiendo...”
     try {
-      const res = await fetch("https://farmacia-backend-psi.vercel.app/api/chat", {
+      // 👉 Llamamos a un endpoint de backend que YA mete la API key en el servidor
+      const res = await fetch("/api/chat-frontend", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-api-key": "CaminogloriaDPM2709_"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: history,  // <-- Cambiado: mandamos historial
-          farmacia_id: farmaciaId
+          messages: history,
+          farmacia_id: farmaciaId,
         }),
       });
+
       const data = await res.json();
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: data.reply || "El bot no respondió. Intenta de nuevo." }
+        { sender: "bot", text: data.reply || "El bot no respondió. Intenta de nuevo." },
       ]);
-    } catch {
-      setMessages(prev => [
+    } catch (err) {
+      setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: "Error conectando con la farmacia. Intenta más tarde." }
+        { sender: "bot", text: "Error conectando con la farmacia. Intenta más tarde." },
       ]);
+    } finally {
+      setIsTyping(false);
     }
-    setIsTyping(false); // 👈 Termina "escribiendo"
   };
 
-  // Cuando el usuario empieza a escribir, ocultamos FAQ
   function handleInputChange(e) {
     setInput(e.target.value);
     if (e.target.value.length > 0 && showFAQ) setShowFAQ(false);
@@ -142,11 +140,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-full sm:max-w-md flex flex-col p-2 sm:p-4">
-        {/* Barra superior personalizada */}
-        <div
-          className="text-lg font-bold mb-3 flex items-center"
-          style={{ color: color }}
-        >
+        {/* Barra superior */}
+        <div className="text-lg font-bold mb-3 flex items-center" style={{ color }}>
           {logo && (
             <img
               src={logo}
@@ -157,13 +152,10 @@ export default function Home() {
           💊 Chat Farmacia
         </div>
 
-        {/* BURBUJAS DE MENSAJES - MÁS REDONDAS */}
+        {/* Mensajes */}
         <div className="flex-1 overflow-y-auto mb-4" style={{ minHeight: "320px", maxHeight: "320px" }}>
           {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} mb-2`}
-            >
+            <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} mb-2`}>
               <div
                 className={`px-4 py-2 text-sm shadow
                   ${msg.sender === "user"
@@ -178,7 +170,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* MENSAJE "ESTÁ ESCRIBIENDO..." */}
+        {/* Está escribiendo... */}
         {isTyping && (
           <div className="flex items-center mb-2">
             <div className="animate-pulse text-gray-500 italic text-sm">
@@ -187,22 +179,23 @@ export default function Home() {
           </div>
         )}
 
-        {/* FAQ Preguntas frecuentes DENTRO del chat */}
-    
-          {showFAQ && (
+        {/* FAQ inicial */}
+        {showFAQ && (
           <div className="flex flex-wrap gap-2 mb-2 justify-center">
             {FAQ_QUESTIONS.map((faq, idx) => (
               <button
                 key={idx}
                 onClick={() => sendMessage(null, faq)}
-                className="text-white rounded-xl px-3 py-2 text-sm font-semibold shadow hover:opacity-90"
-                style={{ border: "none", backgroundColor: color }}
+                className="bg-[#B854A6] text-white rounded-xl px-3 py-2 text-sm font-semibold shadow hover:opacity-90"
+                style={{ border: "none" }}
               >
                 {faq}
               </button>
             ))}
           </div>
         )}
+
+        {/* Input */}
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
             className="flex-1 border rounded-2xl px-4 py-2 focus:outline-none focus:ring-2"
