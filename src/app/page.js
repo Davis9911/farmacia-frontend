@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // Lee parámetros de la URL (color, logo, farmacia_id)
+
 function getQueryParams() {
   if (typeof window === "undefined") {
     return { color: "#2B7DFA", logo: "", farmaciaId: "riera" };
@@ -22,6 +23,9 @@ const FAQ_QUESTIONS = [
 
 export default function Home() {
   const { color, logo, farmaciaId } = getQueryParams();
+  // debajo de const { color, logo, farmaciaId } = getQueryParams();
+const [sessionId] = useState(() => `web_${Date.now()}`);
+
 
   const [messages, setMessages] = useState([
     { sender: "bot", text: "¡Hola! ¿Qué medicamento o producto necesitas consultar?" },
@@ -106,14 +110,15 @@ export default function Home() {
     ];
 
     setIsTyping(true); // ⬅️ muestra “está escribiendo...”
+    setIsTyping(true);
     try {
-      // 👉 Llamamos a un endpoint de backend que YA mete la API key en el servidor
-      const res = await fetch("/api/chat-frontend", {
+      const res = await fetch("/api/workflow-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: history,
           farmacia_id: farmaciaId,
+          message: messageToSend,
+          session_id: sessionId,
         }),
       });
 
